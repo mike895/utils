@@ -2,28 +2,25 @@ import frappe
 import frappe.desk.form.load as load
 import frappe.desk.form.save as save_
 import frappe.desk.reportview as lister
-from stars_et.utils.permission import helper
+from ehpea.utils.permission import helper
 from frappe.model.db_query import DatabaseQuery
 from frappe import _
 from frappe.desk.form.load import run_onload
 
-class CustomDatabaseQuery(DatabaseQuery):
-    def build_and_run(self):
+class CustomDatabaseQuery(DatabaseQuery): 
+    def build_and_run(self):   # all_regions = all_farm and region_item = farm and regions = farms
         args = self.prepare_args()
         args.limit = self.add_limit()
         if args.conditions:
             args.conditions = "where " + args.conditions
-        elif ((self.sectors != "all") or (self.regions != "all")):
+        elif ((self.farms != "all"):
             args.conditions = "where "
         query = f"""select %(fields)s
             from %(tables)s
             %(conditions)s
-            {f'''{"AND " if(self.conditions.__len__() > 0) else ""} EXISTS(select 1 from `tabRegion List` 
-                    where `tabRegion List`.`parent` = `tabCall`.`name`
-                    AND  `tabRegion List`.`region_item`  IN ({self.regions}))''' if (self.regions != "all") else ""}
-            {f'''{"AND " if((self.conditions.__len__() > 0) or (self.regions != "all")) else ""} EXISTS(select 1 from `tabSector List` 
-                    where `tabSector List`.`parent` = `tabCall`.`name`
-                    AND  `tabSector List`.`sector_item`  IN ({self.sectors}))''' if (self.sectors != "all") else ""}
+            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
+                    where `Selected Farm`.`parent` = `Pesticide  Purchase`.`name`
+                                        AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
             %(limit)s""" % args
@@ -35,33 +32,29 @@ class CustomDatabaseQuery(DatabaseQuery):
 
 @frappe.whitelist(allow_guest=True)
 def getlist(permission):
-    allowed_regions =  "all" if((permission == "admin") or (permission.all_regions == 1)) else ", ".join([f"'{i.region_item}'" for i in permission.regions]) 
-    allowed_sectors = "all" if((permission == "admin") or (permission.all_sectors == 1)) else ", ".join([f"'{i.sector_item}'" for i in permission.sectors])
+    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farms]) 
     args = lister.get_form_params()
-    dbq = CustomDatabaseQuery("Call")
-    dbq.regions = allowed_regions
-    dbq.sectors = allowed_sectors
+    dbq = CustomDatabaseQuery("Pesticide  Purchase")
+    dbq.farmss = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs, join="inner join",
-   #	 group_by="`tabCall`.`name`",
+   	 group_by="`tabPesticide  Purchase`.`name`",
     with_childnames=True
     ))(**args)
     return result
 
 def getcount(permission):
-    allowed_regions =  "all" if((permission == "admin") or (permission.all_regions == 1)) else ", ".join([f"'{i.region_item}'" for i in permission.regions]) 
-    allowed_sectors = "all" if((permission == "admin") or (permission.all_sectors == 1)) else ", ".join([f"'{i.sector_item}'" for i in permission.sectors])
+    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farms]) 
     args = lister.get_form_params()
     distinct = 'distinct ' if args.distinct=='true' else ''
-    args.fields = [f"count({distinct}`tabCall`.name) as total_count"]
-    dbq = CustomDatabaseQuery("Call")
-    dbq.regions = allowed_regions
-    dbq.sectors = allowed_sectors
+    args.fields = [f"count({distinct}`tabPesticide  Purchase`.name) as total_count"]
+    dbq = CustomDatabaseQuery("Farm Profile")
+    dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs))(**args)
     return result[0].get("total_count")
 
 @frappe.whitelist(allow_guest=True)
 def getdoc(name, permission):
-    doctype = "Call"
+    doctype = "Pesticide  Purchase"
 
     if not (doctype and name):
         raise Exception('doctype and name required!')
@@ -73,7 +66,8 @@ def getdoc(name, permission):
 
     try:
         doc = frappe.get_doc(doctype, name)
-        helper.is_allowed(permission, [i.region_item for i in doc.region_list], [i.sector_item for i in doc.sector_list], throw=True, all_match=False)
+        farm_doc = frappe.get_doc("Call", doc.farm)
+        helper.is_allowed(permission, [i.farm for i in farm_doc.farm], throw=True, all_match=False)
         load.run_onload(doc)
         if not doc.has_permission("read"):
             frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(doctype + ' ' + name))
@@ -97,7 +91,7 @@ def getdoc(name, permission):
 def save(permission, doc, action):
     """save / submit / update doclist"""
     try:
-        helper.is_allowed(permission, [i['region_item'] for i in doc['region_list']], [i['sector_item'] for i in doc['sector_list']], throw=True)
+        helper.is_allowed(permission, [i['farm'] for i in doc['farm']], throw=True)
         doc = frappe.get_doc(doc)
         save_.set_local_name(doc)
         # action
@@ -115,3 +109,4 @@ def save(permission, doc, action):
     except Exception:
         frappe.errprint(frappe.utils.get_traceback())
         raise
+        

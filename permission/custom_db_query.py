@@ -20,7 +20,7 @@ from frappe.model.meta import get_table_columns
 from frappe.core.doctype.server_script.server_script_utils import get_server_script_map
 
 class DatabaseQuery(object):
-	def __init__(self, doctype, user=None):
+	def __init__(self, doctype, user=None): 
 		self.doctype = doctype
 		self.tables = []
 		self.conditions = []
@@ -38,7 +38,7 @@ class DatabaseQuery(object):
 		join='left join', distinct=False, start=None, page_length=None, limit=None,
 		ignore_ifnull=False, save_user_settings=False, save_user_settings_fields=False,
 		update=None, add_total_row=None, user_settings=None, reference_doctype=None,
-		return_query=False, strict=True, pluck=None, ignore_ddl=False, regions=[], sectors=[]):
+		return_query=False, strict=True, pluck=None, ignore_ddl=False, farms=[]):
 		if not ignore_permissions and \
 			not frappe.has_permission(self.doctype, "select", user=user) and \
 			not frappe.has_permission(self.doctype, "read", user=user):
@@ -90,9 +90,8 @@ class DatabaseQuery(object):
 		self.return_query = return_query
 		self.strict = strict
 		self.ignore_ddl = ignore_ddl
-        self.regions = regions
-        self.sectors = sectors
-
+        	self.farms = farms
+        
 		# for contextual user permission check
 		# to determine which user permission is applicable on link field of specific doctype
 		self.reference_doctype = reference_doctype or self.doctype
@@ -134,8 +133,7 @@ class DatabaseQuery(object):
 
 		query = """select %(fields)s
 			from %(tables)s
-            INNER JOIN `tabRegion List` ON `tabRegion List`.`parent`=`tabCall`.`name`
-            INNER JOIN `tabRegion List` ON `tabRegion List`.`parent`=`tabCall`.`name`
+            INNER JOIN `tabSelected Farm` ON `tabSelected Farm`.`parent`=`tabFarm Profile`.`name`
 			%(conditions)s
 
 			%(group_by)s
@@ -901,3 +899,11 @@ def get_date_range(operator, value):
 	timespan = period_map[operator] + ' ' + timespan_map[value] if operator != 'timespan' else value
 
 	return get_timespan_date_range(timespan)
+	
+	
+	
+	
+	
+	
+	
+	
