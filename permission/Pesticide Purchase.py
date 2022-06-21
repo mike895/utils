@@ -54,7 +54,7 @@ def getcount(permission):
 
 @frappe.whitelist(allow_guest=True)
 def getdoc(name, permission):
-    doctype = "Pesticide  Purchase"
+    doctype = "Pesticide Purchase"
 
     if not (doctype and name):
         raise Exception('doctype and name required!')
