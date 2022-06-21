@@ -4,7 +4,7 @@ import importlib
 import frappe.desk.form.save as save 
 
 
-for_doctypes = ["Farm Profile","Ehpea Permission","Call", "Stars Permission", "Evaluation Submission", "Due Diligence", "Call Submission"]
+for_doctypes = ["Farm Profile","Ehpea Permission","Pesticide Purchase","Call", "Stars Permission", "Evaluation Submission", "Due Diligence", "Call Submission"]
 
 def is_required_doctype(doctype=None):
     doctype = doctype or get_form_params().get("doctype") 
@@ -41,6 +41,7 @@ def proxy_save(doc, action):
 
 @frappe.whitelist()
 def proxy_get():
+    frappe.errprint("yess")
     if(is_required_doctype()):
         doctype = get_form_params().get("doctype") 
         return importlib.import_module(f"ehpea.utils.permission.{doctype}").getlist(get_user_permission())

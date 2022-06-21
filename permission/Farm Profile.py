@@ -19,7 +19,7 @@ class CustomDatabaseQuery(DatabaseQuery):
             from %(tables)s
             %(conditions)s
             {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
-                    where `Selected Farm`.`parent` = `Pesticide  Purchase`.`name`
+                    where `Selected Farm`.`parent` = `Farm Profile`.`name`
                                         AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
@@ -34,7 +34,7 @@ class CustomDatabaseQuery(DatabaseQuery):
 def getlist(permission):
     allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farms]) 
     args = lister.get_form_params()
-    dbq = CustomDatabaseQuery("Pesticide  Purchase")
+    dbq = CustomDatabaseQuery("Farm Profile")
     dbq.farmss = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs, join="inner join",
    	 group_by="`tabPesticide  Purchase`.`name`",
