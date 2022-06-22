@@ -4,7 +4,7 @@ import importlib
 import frappe.desk.form.save as save 
 
 
-for_doctypes = ["Farm Profile","Ehpea Permission","Pesticide Purchase","Call", "Stars Permission", "Evaluation Submission", "Due Diligence", "Call Submission"]
+for_doctypes = ["Action Plan", "Bio Agent Introduction", "Bio Agent Purchase", "Certification", "Ehpea Permission", "Energy", "Fertilizer", "Food safety Lab", "Fuel", "Gender Audit Checklist IRMS part1", "Gender Audit Checklist IRMS part2", "Gender Audit Checklist IRMS part3", "Gender Grievance Handling", "Genders Grievance Management", "Green waste Management checklist", "Implementation of pest management", "Implementation of pest management part 2", "Implementation of pest management part 3", "Landscape and natural conservation audit", "Liquid Waste Management", "Liquid Waste Management Part2", "List of Species", "Meeting Minutes", "Pesticide Application", "Pesticide Purchase", "Training Attendance", "Training Plan", "Water Efficiency", "Water Record", "Workers Walfare OSH", "Workers Walfare OSH part 2", "Workers Walfare OSH part 3"]
 
 def is_required_doctype(doctype=None):
     doctype = doctype or get_form_params().get("doctype") 

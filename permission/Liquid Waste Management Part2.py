@@ -19,7 +19,7 @@ class CustomDatabaseQuery(DatabaseQuery):
             from %(tables)s
             %(conditions)s
             {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
-                    where `tabSelected Farm`.`parent` = `tabAction Plan Template`.`name`
+                    where `tabSelected Farm`.`parent` = `tabLiquid Waste Management Part2`.`name`
                     AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
@@ -34,10 +34,10 @@ class CustomDatabaseQuery(DatabaseQuery):
 def getlist(permission):
     allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
-    dbq = CustomDatabaseQuery("Action Plan Template")
+    dbq = CustomDatabaseQuery("Liquid Waste Management Part2")
     dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute( join="inner join",
-    group_by="`tabAction Plan Template`.`name`",
+    group_by="`tabLiquid Waste Management Part2`.`name`",
     with_childnames=True
     ))(**args)
     return result
@@ -46,15 +46,15 @@ def getcount(permission):
     allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
     distinct = 'distinct ' if args.distinct=='true' else ''
-    args.fields = [f"count({distinct}`tabAction Plan Template`.name) as total_count"]
-    dbq = CustomDatabaseQuery("Action Plan Template")
+    args.fields = [f"count({distinct}`tabLiquid Waste Management Part2`.name) as total_count"]
+    dbq = CustomDatabaseQuery("Liquid Waste Management Part2")
     dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs))(**args)
     return result[0].get("total_count")
 
 @frappe.whitelist(allow_guest=True)
 def getdoc(name, permission):
-    doctype = "Action Plan Template"
+    doctype = "Liquid Waste Management Part2"
 
     if not (doctype and name):
         raise Exception('doctype and name required!')

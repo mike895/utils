@@ -7,8 +7,8 @@ from frappe.model.db_query import DatabaseQuery
 from frappe import _
 from frappe.desk.form.load import run_onload
 
-class CustomDatabaseQuery(DatabaseQuery):
-    def build_and_run(self):
+class CustomDatabaseQuery(DatabaseQuery): 
+    def build_and_run(self):   # all_regions = all_farm and region_item = farm and regions = farms
         args = self.prepare_args()
         args.limit = self.add_limit()
         if args.conditions:
@@ -18,9 +18,9 @@ class CustomDatabaseQuery(DatabaseQuery):
         query = f"""select %(fields)s
             from %(tables)s
             %(conditions)s
-            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabFarm Profile` 
-                    where `tabFarm Profile`.`parent` = `tabEhpea Permission`.`name`
-                                        AND  `tabFarm Profile`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
+            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
+                    where `tabSelected Farm`.`parent` = `tabAction Plan`.`name`
+                    AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
             %(limit)s""" % args
@@ -31,13 +31,13 @@ class CustomDatabaseQuery(DatabaseQuery):
                 update=self.update, ignore_ddl=self.ignore_ddl)
 
 @frappe.whitelist(allow_guest=True)
-def getlist(permission): 
+def getlist(permission):
     allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
-    dbq = CustomDatabaseQuery("Ehpea Permission")
+    dbq = CustomDatabaseQuery("Action Plan")
     dbq.farms = allowed_farms
-    result = (lambda doctype, *args, **kwargs:  dbq.execute(join="inner join",
-    group_by="`tabEhpea Permission`.`name`",
+    result = (lambda doctype, *args, **kwargs:  dbq.execute( join="inner join",
+    group_by="`tabAction Plan`.`name`",
     with_childnames=True
     ))(**args)
     return result
@@ -46,15 +46,15 @@ def getcount(permission):
     allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
     distinct = 'distinct ' if args.distinct=='true' else ''
-    args.fields = [f"count({distinct}`tabEhpea Permission`.name) as total_count"]
-    dbq = CustomDatabaseQuery("Ehpea Permission")
+    args.fields = [f"count({distinct}`tabAction Plan`.name) as total_count"]
+    dbq = CustomDatabaseQuery("Action Plan")
     dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs))(**args)
     return result[0].get("total_count")
 
 @frappe.whitelist(allow_guest=True)
 def getdoc(name, permission):
-    doctype = "Ehpea Permission"
+    doctype = "Action Plan"
 
     if not (doctype and name):
         raise Exception('doctype and name required!')
@@ -66,7 +66,7 @@ def getdoc(name, permission):
 
     try:
         doc = frappe.get_doc(doctype, name)
-        helper.is_allowed(permission, [i.farm for i in doc.farm], throw=True)
+        helper.is_allowed(permission, [i.farm for i in doc.farm], throw=True, all_match=False)
         load.run_onload(doc)
         if not doc.has_permission("read"):
             frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(doctype + ' ' + name))
@@ -87,14 +87,10 @@ def getdoc(name, permission):
     frappe.response.docs.append(doc)
 
 @frappe.whitelist()
-def save(permission, doc, action):  # all_regions = all_farm and region_item = farm and regions = farm
+def save(permission, doc, action):
     """save / submit / update doclist"""
     try:
-        if((permission != "admin") and (doc["user"] == permission.user)):
-            raise Exception(_("You can't set your own permission!"))
-        if((permission != "admin") and (doc['all_farm'] == 1 and permission.all_farm != 1)):
-            raise Exception(_("You can't set All Farms if you don't have All Farms permission."))
-        helper.is_allowed(permission, [i['farm'] for i in (doc.get('farm') or []) ], throw=True)
+        helper.is_allowed(permission, [i['farm'] for i in doc['farm']], throw=True)
         doc = frappe.get_doc(doc)
         save_.set_local_name(doc)
         # action
@@ -112,3 +108,4 @@ def save(permission, doc, action):  # all_regions = all_farm and region_item = f
     except Exception:
         frappe.errprint(frappe.utils.get_traceback())
         raise
+        
