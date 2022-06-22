@@ -13,14 +13,14 @@ class CustomDatabaseQuery(DatabaseQuery):
         args.limit = self.add_limit()
         if args.conditions:
             args.conditions = "where " + args.conditions
-        elif ((self.farms != "all"):
+        elif (self.farms != "all"):
             args.conditions = "where "
         query = f"""select %(fields)s
             from %(tables)s
             %(conditions)s
-            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabFarm Profile` 
-                    where `tabFarm Profile`.`parent` = `Pesticide Purchase`.`name`
-                    AND  `tabFarm Profile`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
+            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
+                    where `tabSelected Farm`.`parent` = `tabPesticide Purchase`.`name`
+                    AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
             %(limit)s""" % args
@@ -32,24 +32,28 @@ class CustomDatabaseQuery(DatabaseQuery):
 
 @frappe.whitelist(allow_guest=True)
 def getlist(permission):
-    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farms]) 
+    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
     dbq = CustomDatabaseQuery("Pesticide Purchase")
-    dbq.farmss = allowed_farms
-    result = (lambda doctype, *args, **kwargs:  dbq.execute(join="inner join",
+    dbq.farms = allowed_farms
+    frappe.errprint(dbq.farms)
+    result = (lambda doctype, *args, **kwargs:  dbq.execute( join="inner join",
     group_by="`tabPesticide Purchase`.`name`",
+    #farms = allowed_farms,
     with_childnames=True
     ))(**args)
+    frappe.errprint(result)
     return result
 
 def getcount(permission):
-    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farms]) 
+    allowed_farms =  "all" if((permission == "admin") or (permission.all_farm == 1)) else ", ".join([f"'{i.farm}'" for i in permission.farm]) 
     args = lister.get_form_params()
     distinct = 'distinct ' if args.distinct=='true' else ''
     args.fields = [f"count({distinct}`tabPesticide Purchase`.name) as total_count"]
     dbq = CustomDatabaseQuery("Pesticide Purchase")
     dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs))(**args)
+    frappe.errprint(result)
     return result[0].get("total_count")
 
 @frappe.whitelist(allow_guest=True)
@@ -66,8 +70,9 @@ def getdoc(name, permission):
 
     try:
         doc = frappe.get_doc(doctype, name)
-        farm_doc = frappe.get_doc("Call", doc.farm)
-        helper.is_allowed(permission, [i.farm for i in farm_doc.farm], throw=True, all_match=False)
+#        farm_doc = frappe.db.get_list("Pesticide Purchase",fields =['name','farm'],filters={'farm': doc.farm})
+        frappe.errprint(doc.farm)
+        helper.is_allowed(permission, [i.farm for i in doc.farm], throw=True, all_match=False)
         load.run_onload(doc)
         if not doc.has_permission("read"):
             frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(doctype + ' ' + name))
@@ -91,6 +96,7 @@ def getdoc(name, permission):
 def save(permission, doc, action):
     """save / submit / update doclist"""
     try:
+        frappe.errprint(doc['farm'])
         helper.is_allowed(permission, [i['farm'] for i in doc['farm']], throw=True)
         doc = frappe.get_doc(doc)
         save_.set_local_name(doc)

@@ -18,9 +18,9 @@ class CustomDatabaseQuery(DatabaseQuery):
         query = f"""select %(fields)s
             from %(tables)s
             %(conditions)s
-            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabSelected Farm` 
-                    where `Selected Farm`.`parent` = `tabEhpea Permission`.`name`
-                                        AND  `tabSelected Farm`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
+            {f'''{"AND " if(self.conditions.__len__() > 0) else ""}NOT EXISTS(select 1 from `tabFarm Profile` 
+                    where `tabFarm Profile`.`parent` = `tabEhpea Permission`.`name`
+                                        AND  `tabFarm Profile`.`farm` NOT IN ({self.farms}))''' if (self.farms != "all") else ""}
             %(group_by)s
             %(order_by)s
             %(limit)s""" % args
@@ -36,7 +36,7 @@ def getlist(permission):
     args = lister.get_form_params()
     dbq = CustomDatabaseQuery("Ehpea Permission")
     dbq.farms = allowed_farms
-    result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs, join="inner join",
+    result = (lambda doctype, *args, **kwargs:  dbq.execute(join="inner join",
     group_by="`tabEhpea Permission`.`name`",
     with_childnames=True
     ))(**args)

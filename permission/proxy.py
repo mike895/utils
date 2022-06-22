@@ -15,7 +15,8 @@ def get_user_permission():
     if(frappe.session.user == "Administrator"):
         return "admin"
     try:
-        return frappe.get_doc("Ehpea Permission", frappe.session.user)
+        test = frappe.get_doc("Ehpea Permission", frappe.session.user)
+        return test # frappe.get_doc("Ehpea Permission", frappe.session.user)
     except:
         frappe.throw("You don't have a Ehpea Permission with your account.")
         raise Exception("You don't have a Ehpea Permission with your account.")

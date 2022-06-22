@@ -30,7 +30,8 @@ class DatabaseQuery(object):
 		self.ignore_ifnull = False
 		self.flags = frappe._dict()
 		self.reference_doctype = None
-
+		self.nvalue = "tab"+doctype
+	@staticmethod
 	def execute(self, fields=None, filters=None, or_filters=None,
 		docstatus=None, group_by=None, order_by=None, limit_start=False,
 		limit_page_length=None, as_list=False, with_childnames=False, debug=False,
@@ -90,8 +91,8 @@ class DatabaseQuery(object):
 		self.return_query = return_query
 		self.strict = strict
 		self.ignore_ddl = ignore_ddl
-        	self.farms = farms
-        
+	       	self.farms = farms
+		 
 		# for contextual user permission check
 		# to determine which user permission is applicable on link field of specific doctype
 		self.reference_doctype = reference_doctype or self.doctype
@@ -100,7 +101,7 @@ class DatabaseQuery(object):
 			self.user_settings = json.loads(user_settings)
 
 		self.columns = self.get_table_columns()
-
+		
 		# no table & ignore_ddl, return
 		if not self.columns: return []
 
@@ -133,7 +134,8 @@ class DatabaseQuery(object):
 
 		query = """select %(fields)s
 			from %(tables)s
-            INNER JOIN `tabSelected Farm` ON `tabSelected Farm`.`parent`=`tabFarm Profile`.`name`
+            INNER JOIN `tabSelected Farm` ON `tabSelected Farm`.`parent`=%(nvalue)s.`name`
+	    INNER JOIN `tabSelected Farm` ON `tabSelected Farm`.`parent`=%(nvalue)s.`name`
 			%(conditions)s
 
 			%(group_by)s

@@ -13,16 +13,12 @@ def is_role_allowed(required_role, my_roles, throw=False):
 
 
 def is_allowed(permission:Union[EhpeaPermission, str], farms:list, throw=False, all_match=True):
-#    if(department_first):
-#        if(( permission.department if(permission != "admin") else "Stars.et") != department):
-#            if(throw): raise Exception("You don't have permission for this department.")
-#            return False
     if(permission == "admin"):
         return True
     if(permission.all_farm != 1):   # all_regions = all_farm and region_item = farm and regions = farms
-        allowed_farms = [i.farm for i in permission.farms]
-        if(not (all if(all_match) else any)(region in allowed_farms for farm in farms)):
-            if(throw): raise Exception(f"You don't have permission for those farms {', '.join(remove_else(farms, allowed_farms))}.")
+        allowed_farms = [i.farm for i in permission.farm]
+        if(not (all if(all_match) else any)(farm in allowed_farms for farm in farms)):
+            if(throw): raise Exception(f"You don't have permission for farm {', '.join(remove_else(farms, allowed_farms))}.")
             return False            
     return True
     
