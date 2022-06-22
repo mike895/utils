@@ -36,13 +36,10 @@ def getlist(permission):
     args = lister.get_form_params()
     dbq = CustomDatabaseQuery("Pesticide Purchase")
     dbq.farms = allowed_farms
-    frappe.errprint(dbq.farms)
     result = (lambda doctype, *args, **kwargs:  dbq.execute( join="inner join",
     group_by="`tabPesticide Purchase`.`name`",
-    #farms = allowed_farms,
     with_childnames=True
     ))(**args)
-    frappe.errprint(result)
     return result
 
 def getcount(permission):
@@ -53,7 +50,6 @@ def getcount(permission):
     dbq = CustomDatabaseQuery("Pesticide Purchase")
     dbq.farms = allowed_farms
     result = (lambda doctype, *args, **kwargs:  dbq.execute(*args, **kwargs))(**args)
-    frappe.errprint(result)
     return result[0].get("total_count")
 
 @frappe.whitelist(allow_guest=True)
@@ -70,8 +66,6 @@ def getdoc(name, permission):
 
     try:
         doc = frappe.get_doc(doctype, name)
-#        farm_doc = frappe.db.get_list("Pesticide Purchase",fields =['name','farm'],filters={'farm': doc.farm})
-        frappe.errprint(doc.farm)
         helper.is_allowed(permission, [i.farm for i in doc.farm], throw=True, all_match=False)
         load.run_onload(doc)
         if not doc.has_permission("read"):
@@ -96,7 +90,6 @@ def getdoc(name, permission):
 def save(permission, doc, action):
     """save / submit / update doclist"""
     try:
-        frappe.errprint(doc['farm'])
         helper.is_allowed(permission, [i['farm'] for i in doc['farm']], throw=True)
         doc = frappe.get_doc(doc)
         save_.set_local_name(doc)
